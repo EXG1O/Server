@@ -1,16 +1,10 @@
-DEAFAULT_FILES = {
-	'Bot-Settings.json': {
-		'Automati_Save_Log': False,
-		'VK_Token': '',
-		'Group_ID': ''
-	},
+BOT_DEAFAULT_FILES = {
 	'User-Commands.json': [
 		{
 			'Command_Name': 'Вывод статистики',
 			'Command': '!Статистика',
 			'Command_Answer': """\
 Вас зовут: {user}
-Ваш ранг: {db[4]}
 Ваш балланс: {db[2]}
 Ваш уровень: {db[1]}
 Ваш опыт: {db[3]}"""
