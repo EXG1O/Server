@@ -144,45 +144,45 @@ def check_user_login_and_password_and_unique_key_and_bot_name(func): # Деко�
 
 def check_user_login_and_password_and_unique_key(func): # Декоратор
 	def wrapper(login):
-		# try:
-		user_data = json.loads(request.data.decode('UTF-8'))
-		password = user_data['Password']
-		unique_key = user_data['Unique_Key']
+		try:
+			user_data = json.loads(request.data.decode('UTF-8'))
+			password = user_data['Password']
+			unique_key = user_data['Unique_Key']
 
-		lock.acquire(True)
-		vk_bot_accounts_sql.execute(f"SELECT * From Accounts WHERE Login = '{login}'")
-		account = vk_bot_accounts_sql.fetchone()
-		lock.release()
+			lock.acquire(True)
+			vk_bot_accounts_sql.execute(f"SELECT * From Accounts WHERE Login = '{login}'")
+			account = vk_bot_accounts_sql.fetchone()
+			lock.release()
 
-		if account != None:
-			enrypted_password = encrypt(password, password)
-			if enrypted_password == account[1]:
-				if unique_key  == account[2]:
-					return func(user_data)
+			if account != None:
+				enrypted_password = encrypt(password, password)
+				if enrypted_password == account[1]:
+					if unique_key  == account[2]:
+						return func(user_data)
+					else:
+						return json.dumps(
+							{
+								'Answer': 'Был передан неверный "Unique_Key"!'
+							}, ensure_ascii = False
+						), 400
 				else:
 					return json.dumps(
 						{
-							'Answer': 'Был передан неверный "Unique_Key"!'
+							'Answer': 'Был передан неверный "Password"!'
 						}, ensure_ascii = False
 					), 400
 			else:
 				return json.dumps(
 					{
-						'Answer': 'Был передан неверный "Password"!'
+						'Answer': 'Был передан неверный "Login"!'
 					}, ensure_ascii = False
 				), 400
-		else:
+		except:
 			return json.dumps(
 				{
-					'Answer': 'Был передан неверный "Login"!'
+					'Answer': 'Неизвестная ошибка на сервере!'
 				}, ensure_ascii = False
 			), 400
-		# except:
-		# 	return json.dumps(
-		# 		{
-		# 			'Answer': 'Неизвестная ошибка на сервере!'
-		# 		}, ensure_ascii = False
-		# 	), 400
 	wrapper.__name__ = func.__name__
 	return wrapper
 
