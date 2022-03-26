@@ -53,12 +53,7 @@ vk_bot_accounts_db.commit()
 # Обычные функции
 # ==================================================================
 def clear_key(key): # Получение чистого ключа из пароля
-	if len(key) < 8:
-		while len(key) < 8:
-			key += 'd'
-		key = key.encode('UTF-8')
-	else:
-		key = ''.join(list(key)[0:8]).encode('UTF-8')
+	key = ''.join(list(key)[0:8]).encode('UTF-8')
 	return key
 
 def encrypt(key, data): # Шифрование
@@ -217,40 +212,47 @@ def registration_account(): # Регистрация
 				}, ensure_ascii = False
 			), 400
 		else:
-			lock.acquire(True)
-			vk_bot_accounts_sql.execute(f"SELECT * From Accounts WHERE Login = '{login}'")
-			account = vk_bot_accounts_sql.fetchone()
-			lock.release()
+			if len(password) >= 8:
+				lock.acquire(True)
+				vk_bot_accounts_sql.execute(f"SELECT * From Accounts WHERE Login = '{login}'")
+				account = vk_bot_accounts_sql.fetchone()
+				lock.release()
 
-			if account == None:
-				# Шифрования пароля
-				encrypted_password = encrypt(password, password)
+				if account == None:
+					# Шифрования пароля
+					encrypted_password = encrypt(password, password)
 
-				# Создания уникального ключа для пользователя
-				generate_unique_key_status = True
-				while generate_unique_key_status:
-					unique_key = generate_unique_key()
-					vk_bot_accounts_sql.execute(f"SELECT * FROM Accounts WHERE Unique_Key = '{unique_key}'")
-					account = vk_bot_accounts_sql.fetchone()
-					if account == None:
-						generate_unique_key_status = False
+					# Создания уникального ключа для пользователя
+					generate_unique_key_status = True
+					while generate_unique_key_status:
+						unique_key = generate_unique_key()
+						vk_bot_accounts_sql.execute(f"SELECT * FROM Accounts WHERE Unique_Key = '{unique_key}'")
+						account = vk_bot_accounts_sql.fetchone()
+						if account == None:
+							generate_unique_key_status = False
 
-				# Запись нового аккаунта в базу данных аккаунтов
-				vk_bot_accounts_sql.execute("INSERT INTO Accounts VALUES (?, ?, ?)", (login, encrypted_password, unique_key))
-				vk_bot_accounts_db.commit()
+					# Запись нового аккаунта в базу данных аккаунтов
+					vk_bot_accounts_sql.execute("INSERT INTO Accounts VALUES (?, ?, ?)", (login, encrypted_password, unique_key))
+					vk_bot_accounts_db.commit()
 
-				# Создаём директорию для нового аккаунта пользователя
-				os.mkdir(f'{PATH}/Files/{unique_key}')
+					# Создаём директорию для нового аккаунта пользователя
+					os.mkdir(f'{PATH}/Files/{unique_key}')
 
-				return json.dumps(
-					{
-						'Answer': 'Вы успешно создали аккаунт.'
-					}, ensure_ascii = False
-				), 200
+					return json.dumps(
+						{
+							'Answer': 'Вы успешно создали аккаунт.'
+						}, ensure_ascii = False
+					), 200
+				else:
+					return json.dumps(
+						{
+							'Answer': f'Login "{login}" уже занят!'
+						}, ensure_ascii = False
+					), 400
 			else:
 				return json.dumps(
 					{
-						'Answer': f'Login "{login}" уже занят!'
+						'Answer': f'Пароль должен быть не менее 8 символов!'
 					}, ensure_ascii = False
 				), 400
 	except:
